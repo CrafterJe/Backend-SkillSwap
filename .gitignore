@@ -1,0 +1,28 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de entorno
+.env
+.env.*
+
+# Configuración de IDEs/editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de log
+*.log
+
+# Railway build cache
+railway/
