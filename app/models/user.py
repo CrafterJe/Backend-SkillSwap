@@ -1,6 +1,10 @@
 from pydantic import BaseModel, EmailStr
 
-class User(BaseModel):
-    name: str
+class UserPublic(BaseModel):
+    username: str
     email: EmailStr
-    password: str
+    first_name: str
+    last_name: str
+
+    class Config:
+        orm_mode = True
