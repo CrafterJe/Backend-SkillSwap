@@ -26,4 +26,4 @@ app.include_router(auth.router)
 # Punto de entrada 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="192.168.100.34", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="192.168.100.11", port=8000, reload=True)
