@@ -1,11 +1,12 @@
 import sys
 import os
 
-# Añade la carpeta raíz del proyecto (backend) al path para que funcione el import "app"
+# Añade la carpeta raíz del proyecto (backend) al path para que funcione el import "app"R
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI
 from app.routes import auth
+from app.routes.navigation import profileRoute
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -22,6 +23,7 @@ app.add_middleware(
 
 # Rutas de autenticación
 app.include_router(auth.router)
+app.include_router(profileRoute.router)
 
 # Punto de entrada 
 if __name__ == "__main__":

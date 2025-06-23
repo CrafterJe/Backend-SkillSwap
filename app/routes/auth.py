@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schemas.user import UserCreate
-from app.utils.auth import hash_password, verify_password, create_access_token
-from app.utils.auth_guard import auth_required
+from app.schemas.authSchema import UserCreate
+from app.utils.authUtils import hash_password, verify_password, create_access_token
+from app.utils.auth_guardUtils import auth_required
 from app.database import user_collection
 from datetime import datetime, date
 
