@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import date
 
@@ -25,3 +25,7 @@ class UpdateUserProfile(BaseModel):
     interests: Optional[str] = None
     allow_be_added: Optional[bool] = None
     about_me: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)

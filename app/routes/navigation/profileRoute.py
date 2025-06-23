@@ -1,6 +1,7 @@
 # routes/navigation/profile.py
 from fastapi import APIRouter, Depends, HTTPException
 from app.utils.auth_guardUtils import auth_required
+from app.utils.securityUtils import hash_password, verify_password
 from app.database import user_collection
 from app.schemas.navigation.profileSchema import *
 from datetime import datetime
@@ -53,3 +54,24 @@ async def update_profile(payload: UpdateUserProfile, user_id: str = Depends(auth
         raise HTTPException(status_code=400, detail="No se pudo actualizar el perfil")
 
     return {"message": "Perfil actualizado correctamente"}
+
+@router.patch("/password")
+async def change_password(
+    payload: PasswordChange,
+    user_id: str = Depends(auth_required)
+):
+    user = await user_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not verify_password(payload.current_password, user["password"]):
+        raise HTTPException(status_code=403, detail="La contraseña actual no es correcta")
+
+    new_hashed = hash_password(payload.new_password)
+
+    await user_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"password": new_hashed}}
+    )
+
+    return {"message": "Contraseña actualizada correctamente"}
