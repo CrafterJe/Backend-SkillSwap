@@ -13,6 +13,7 @@ class UserProfile(BaseModel):
     interests: Optional[str]
     allow_be_added: Optional[bool]
     about_me: Optional[str]
+    profile_image: Optional[str] = None
 
 class UpdateUserProfile(BaseModel):
     first_name: Optional[str] = None
@@ -25,6 +26,7 @@ class UpdateUserProfile(BaseModel):
     interests: Optional[str] = None
     allow_be_added: Optional[bool] = None
     about_me: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class PasswordChange(BaseModel):
     current_password: str = Field(..., min_length=6)

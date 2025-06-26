@@ -31,6 +31,7 @@ async def get_profile(user_id: str = Depends(auth_required)):
         "interests": user.get("interests"),
         "allow_be_added": user.get("allow_be_added", True),
         "about_me": user.get("about_me"),
+        "profile_image": user.get("profile_image"),
     }
 
 
