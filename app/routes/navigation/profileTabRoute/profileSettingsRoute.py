@@ -1,13 +1,13 @@
-# routes/navigation/profile.py
+# routes/navigation/profileTab/profileSettingsRoute.py
 from fastapi import APIRouter, Depends, HTTPException
 from app.utils.auth_guardUtils import auth_required
 from app.utils.securityUtils import hash_password, verify_password
 from app.database import user_collection
-from app.schemas.navigation.profileSchema import *
+from app.schemas.navigation.profileTabSchema.profileSettingsSchema import *
 from datetime import datetime
 from bson import ObjectId
 
-router = APIRouter(prefix="/navigation/profile", tags=["Navigation - Profile"])
+router = APIRouter(prefix="/navigation/profileTab/profileSettings", tags=["Navigation - Profile"])
 
 @router.get("", response_model=UserProfile)
 async def get_profile(user_id: str = Depends(auth_required)):

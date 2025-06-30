@@ -6,7 +6,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI
 from app.routes import auth
-from app.routes.navigation import profileRoute
+from app.routes.navigation.profileTabRoute import profileSettingsRoute
+from app.routes.navigation.profileTabRoute import profileScreenRoute
+from app.routes.navigation.searchRoute import router as search_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -23,9 +25,10 @@ app.add_middleware(
 
 # Rutas de autenticación
 app.include_router(auth.router)
-app.include_router(profileRoute.router)
-
+app.include_router(profileSettingsRoute.router)
+app.include_router(profileScreenRoute.router)
+app.include_router(search_router)
 # Punto de entrada 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="192.168.100.11", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="192.168.100.10", port=8000, reload=True)
