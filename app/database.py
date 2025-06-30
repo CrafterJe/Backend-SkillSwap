@@ -6,3 +6,5 @@ db = client[DB_NAME]
 
 # colección de usuarios
 user_collection = db["users"]
+# colección de notificaciones
+notification_collection = db["notifications"]
