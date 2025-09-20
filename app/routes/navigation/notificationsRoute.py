@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from app.database import notification_collection, user_collection
 from app.schemas.navigation.notificationsSchema import NotificationResponse, PushTokenRequest
-from app.utils.auth_guardUtils import auth_required
+from app.utils.auth_guardUtils import auth_required_depends
 from bson import ObjectId
 from datetime import datetime
 
@@ -13,7 +13,7 @@ router = APIRouter(
 
 # ========= OBTENER NOTIFICACIONES DEL USUARIO ACTUAL =========
 @router.get("/", response_model=List[NotificationResponse])
-async def get_notifications(current_user_id: str = Depends(auth_required)):
+async def get_notifications(current_user_id: str = Depends(auth_required_depends)):
     notifications_cursor = notification_collection.find(
         {"to_user": ObjectId(current_user_id)},
         sort=[("created_at", -1)]
@@ -36,7 +36,7 @@ async def get_notifications(current_user_id: str = Depends(auth_required)):
             "id": str(notif["_id"]),
             "type": notif["type"],
             "message": notif["message"],
-            "created_at": notif["created_at"],
+            "created_at": notif["created_at"].isoformat() if notif.get("created_at") else None,
             "read": notif.get("read", False),
             "from_user": {
                 "id": str(from_user["_id"]),
@@ -51,7 +51,7 @@ async def get_notifications(current_user_id: str = Depends(auth_required)):
 
 # ========= MARCAR NOTIFICACIÓN COMO LEÍDA =========
 @router.patch("/{notification_id}/read")
-async def mark_notification_as_read(notification_id: str, current_user_id: str = Depends(auth_required)):
+async def mark_notification_as_read(notification_id: str, current_user_id: str = Depends(auth_required_depends)):
     result = await notification_collection.update_one(
         {
             "_id": ObjectId(notification_id),
@@ -67,7 +67,7 @@ async def mark_notification_as_read(notification_id: str, current_user_id: str =
 
 
 @router.patch("/read/all")
-async def mark_all_as_read(current_user_id: str = Depends(auth_required)):
+async def mark_all_as_read(current_user_id: str = Depends(auth_required_depends)):
     result = await notification_collection.update_many(
         {
             "to_user": ObjectId(current_user_id),
@@ -80,7 +80,7 @@ async def mark_all_as_read(current_user_id: str = Depends(auth_required)):
 
 
 @router.post("/push-token")
-async def update_push_token(payload: PushTokenRequest, current_user_id: str = Depends(auth_required)):
+async def update_push_token(payload: PushTokenRequest, current_user_id: str = Depends(auth_required_depends)):
     result = await user_collection.update_one(
     {"_id": ObjectId(current_user_id)},
     {"$set": {"expo_push_token": payload.token}}

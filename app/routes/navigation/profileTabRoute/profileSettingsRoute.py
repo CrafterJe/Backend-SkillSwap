@@ -1,6 +1,6 @@
 # routes/navigation/profileTab/profileSettingsRoute.py
 from fastapi import APIRouter, Depends, HTTPException
-from app.utils.auth_guardUtils import auth_required
+from app.utils.auth_guardUtils import auth_required_depends
 from app.utils.securityUtils import hash_password, verify_password
 from app.database import user_collection
 from app.schemas.navigation.profileTabSchema.profileSettingsSchema import *
@@ -10,7 +10,7 @@ from bson import ObjectId
 router = APIRouter(prefix="/navigation/profileTab/profileSettings", tags=["Navigation - Profile"])
 
 @router.get("", response_model=UserProfile)
-async def get_profile(user_id: str = Depends(auth_required)):
+async def get_profile(user_id: str = Depends(auth_required_depends)):
     user = await user_collection.find_one({"_id": ObjectId(user_id)})
 
     if not user:
@@ -36,7 +36,7 @@ async def get_profile(user_id: str = Depends(auth_required)):
 
 
 @router.put("")
-async def update_profile(payload: UpdateUserProfile, user_id: str = Depends(auth_required)):
+async def update_profile(payload: UpdateUserProfile, user_id: str = Depends(auth_required_depends)):
     update_data = payload.dict(exclude_unset=True)
 
     # Convertir birth_date a datetime si viene en el payload
@@ -59,7 +59,7 @@ async def update_profile(payload: UpdateUserProfile, user_id: str = Depends(auth
 @router.patch("/password")
 async def change_password(
     payload: PasswordChange,
-    user_id: str = Depends(auth_required)
+    user_id: str = Depends(auth_required_depends)
 ):
     user = await user_collection.find_one({"_id": ObjectId(user_id)})
     if not user:

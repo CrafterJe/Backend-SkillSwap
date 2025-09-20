@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from app.database import user_collection, notification_collection
 from app.schemas.navigation.profileTabSchema.profileScreenSchema import PublicUserProfile, FollowActionResponse
-from app.utils.auth_guardUtils import auth_required
+from app.utils.auth_guardUtils import auth_required_depends
 from app.utils.push_notifications import send_push_notification 
 from bson import ObjectId
 from datetime import datetime
@@ -15,7 +15,7 @@ router = APIRouter(
 @router.get("/{username}", response_model=PublicUserProfile)
 async def get_public_profile(
     username: str = Path(..., min_length=3, max_length=30),
-    current_user_id: Optional[str] = Depends(auth_required)
+    current_user_id: Optional[str] = Depends(auth_required_depends)
 ):
     filtro = {"username": {"$regex": f"^{username}$", "$options": "i"}}
     user = await user_collection.find_one(filtro)
@@ -49,7 +49,7 @@ async def get_public_profile(
     }
 
 @router.post("/{username}/follow", response_model=FollowActionResponse)
-async def follow_user(username: str, current_user_id: str = Depends(auth_required)):
+async def follow_user(username: str, current_user_id: str = Depends(auth_required_depends)):
     target = await user_collection.find_one({
         "username": {"$regex": f"^{username}$", "$options": "i"}
     })
@@ -98,7 +98,7 @@ async def follow_user(username: str, current_user_id: str = Depends(auth_require
     return {"message": f"Ahora sigues a {target['username']}"}
 
 @router.post("/{username}/unfollow", response_model=FollowActionResponse)
-async def unfollow_user(username: str, current_user_id: str = Depends(auth_required)):
+async def unfollow_user(username: str, current_user_id: str = Depends(auth_required_depends)):
     target = await user_collection.find_one({
         "username": {"$regex": f"^{username}$", "$options": "i"}
     })
