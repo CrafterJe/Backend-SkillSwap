@@ -1,3 +1,4 @@
+#app/routes/notificationsRoute.py
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from app.database import notification_collection, user_collection

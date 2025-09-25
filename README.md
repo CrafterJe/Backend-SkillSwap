@@ -7,13 +7,16 @@ Backend API for SkillSwap, a social platform for skill exchange and learning.
 - **JWT Refresh Token Authentication** - Secure authentication with automatic token renewal
 - **User Management** - Registration, login, profile management
 - **Social Features** - Follow/unfollow users, notifications
+- **Real-time Messaging** - Private messaging system with conversation management
+- **WebSocket Support** - Real-time message delivery and user status
 - **Search** - User search functionality
-- **Real-time Notifications** - Push notification support
+- **Push Notifications** - Mobile push notification support
 
 ## Tech Stack
 
 - **FastAPI** - Modern, fast web framework for building APIs
 - **MongoDB** - NoSQL database with Motor async driver
+- **WebSocket** - Real-time bidirectional communication
 - **JWT** - JSON Web Tokens for authentication
 - **Pydantic** - Data validation and settings management
 - **Python 3.11+** - Latest Python features
@@ -102,6 +105,14 @@ DATABASE_NAME=skillswap
 | POST | `/navigation/profileTab/profileScreen/{username}/follow` | Follow user |
 | POST | `/navigation/profileTab/profileScreen/{username}/unfollow` | Unfollow user |
 
+### Messages
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/messages/conversations` | Get user conversations |
+| GET | `/messages/conversation/{username}` | Get messages with specific user |
+| POST | `/messages/send` | Send message to user |
+
 ### Notifications
 
 | Method | Endpoint | Description |
@@ -116,6 +127,12 @@ DATABASE_NAME=skillswap
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/search/users?query={query}` | Search users |
+
+### WebSocket
+
+| Endpoint | Description |
+|----------|-------------|
+| `/ws?token={jwt_token}` | Real-time message delivery and user status |
 
 ## Authentication Usage
 
@@ -166,8 +183,31 @@ curl -X POST https://api.skillswap.com/auth/refresh \
   "profile_image": "string",
   "followers": ["ObjectId"],
   "following": ["ObjectId"],
+  "expo_push_token": "string",
   "created_at": "datetime",
   "last_login": "datetime"
+}
+```
+
+### Conversations Collection
+```json
+{
+  "_id": "ObjectId",
+  "participants": ["ObjectId"],
+  "created_at": "datetime",
+  "updated_at": "datetime"
+}
+```
+
+### Messages Collection
+```json
+{
+  "_id": "ObjectId",
+  "conversation_id": "ObjectId",
+  "sender_id": "ObjectId",
+  "content": "string",
+  "created_at": "datetime",
+  "is_read": "boolean"
 }
 ```
 
@@ -182,6 +222,34 @@ curl -X POST https://api.skillswap.com/auth/refresh \
   "read": "boolean",
   "created_at": "datetime"
 }
+```
+
+## Real-time Messaging
+
+### WebSocket Connection
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws?token=your_jwt_token');
+
+ws.onmessage = function(event) {
+    const message = JSON.parse(event.data);
+    console.log('Received:', message);
+};
+```
+
+### Message Types
+- `new_message` - New message received
+- `user_status` - User online/offline status
+- `ping/pong` - Connection heartbeat
+
+### Sending Messages
+```bash
+curl -X POST http://localhost:8000/messages/send \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "recipient_username": "john_doe",
+       "content": "Hello there!"
+     }'
 ```
 
 ## Development
@@ -203,14 +271,22 @@ app/
 ├── main.py              # FastAPI app initialization
 ├── database.py          # MongoDB connection
 ├── models/             # Data models
+│   ├── authModel.py    # User authentication models
+│   └── messageModel.py # Message and conversation models
 ├── routes/             # API endpoints
 │   ├── auth.py         # Authentication routes
+│   ├── messageRoute.py # Messaging endpoints
+│   ├── websocketRoute.py # WebSocket connections
 │   └── navigation/     # Feature routes
 ├── schemas/            # Pydantic schemas
+│   ├── authSchema.py   # Auth request/response models
+│   └── messages/       # Message schemas
 ├── utils/              # Utility functions
 │   ├── authUtils.py    # JWT token management
 │   ├── securityUtils.py # Password hashing
-│   └── auth_guardUtils.py # Auth middleware
+│   ├── auth_guardUtils.py # Auth middleware
+│   ├── websocket_manager.py # WebSocket management
+│   └── push_notifications.py # Push notification service
 ```
 
 ## Deployment
@@ -246,7 +322,9 @@ When the server is running, visit:
 - JWT tokens are signed with HS256 algorithm
 - Refresh tokens have longer expiration than access tokens
 - Input validation using Pydantic schemas
+- WebSocket connections require JWT authentication
 - Rate limiting and CORS configuration
+- Push notifications use secure tokens
 
 ## License
 
