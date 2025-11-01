@@ -1,5 +1,5 @@
-# app/routes/messageRoute.py
-from fastapi import APIRouter, HTTPException, status, Depends
+# app/routes/messageRoute.py - CORREGIDO
+from fastapi import APIRouter, HTTPException, status, Depends, Query
 from app.schemas.messages.messageSchema import SendMessageRequest, MessageResponse, ConversationResponse, ConversationDetailResponse, MessageUser
 from app.utils.auth_guardUtils import auth_required_depends
 from app.models.messageModel import conversation_collection, message_collection
@@ -9,6 +9,10 @@ from app.utils.push_notifications import send_push_notification
 from bson import ObjectId
 from datetime import datetime
 from typing import List
+import logging
+
+# Configurar logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/messages", tags=["Messages"])
 
@@ -74,8 +78,13 @@ async def get_conversations(current_user_id: str = Depends(auth_required_depends
         )
 
 @router.get("/conversation/{username}", response_model=ConversationDetailResponse)
-async def get_conversation_with_user(username: str, current_user_id: str = Depends(auth_required_depends)):
-    """Obtiene mensajes con un usuario específico"""
+async def get_conversation_with_user(
+    username: str, 
+    current_user_id: str = Depends(auth_required_depends),
+    limit: int = Query(50, ge=10, le=100, description="Número de mensajes a cargar"),
+    before_id: str = Query(None, description="ID del mensaje para paginación")
+):
+    """Obtiene mensajes con un usuario específico (OPTIMIZADO)"""
     try:
         # Buscar el otro usuario
         other_user = await user_collection.find_one({"username": username})
@@ -92,10 +101,24 @@ async def get_conversation_with_user(username: str, current_user_id: str = Depen
         
         if conversation:
             conversation_id = str(conversation["_id"])
-            # Obtener mensajes
-            message_docs = await message_collection.find({
-                "conversation_id": conversation["_id"]
-            }).sort("created_at", 1).to_list(length=1000)
+            
+            # Query optimizado con paginación
+            query = {"conversation_id": conversation["_id"]}
+            if before_id:
+                # Si hay before_id, traer mensajes anteriores a ese ID
+                try:
+                    query["_id"] = {"$lt": ObjectId(before_id)}
+                except:
+                    pass
+            
+            # Obtener mensajes (limitado)
+            message_docs = await message_collection.find(query)\
+                .sort("created_at", -1)\
+                .limit(limit)\
+                .to_list(length=limit)
+            
+            # Invertir para tener orden cronológico
+            message_docs.reverse()
             
             # Marcar como leídos los mensajes del otro usuario
             await message_collection.update_many(
@@ -107,19 +130,33 @@ async def get_conversation_with_user(username: str, current_user_id: str = Depen
                 {"$set": {"is_read": True}}
             )
             
-            # Formatear mensajes
+            # OPTIMIZACIÓN: Obtener TODOS los senders únicos en una sola query
+            sender_ids = list(set(msg["sender_id"] for msg in message_docs))
+            senders = await user_collection.find(
+                {"_id": {"$in": sender_ids}}
+            ).to_list(length=len(sender_ids))
+            
+            # Crear mapa de senders para acceso rápido
+            sender_map = {
+                str(sender["_id"]): MessageUser(
+                    id=str(sender["_id"]),
+                    username=sender["username"],
+                    first_name=sender.get("first_name", ""),
+                    last_name=sender.get("last_name", ""),
+                    profile_image=sender.get("profile_image", "")
+                )
+                for sender in senders
+            }
+            
+            # Formatear mensajes usando el mapa (sin queries adicionales)
             for msg in message_docs:
-                sender = await user_collection.find_one({"_id": msg["sender_id"]})
+                sender_id = str(msg["sender_id"])
+                sender = sender_map.get(sender_id)
+                
                 if sender:
                     messages.append(MessageResponse(
                         id=str(msg["_id"]),
-                        sender=MessageUser(
-                            id=str(sender["_id"]),
-                            username=sender["username"],
-                            first_name=sender.get("first_name", ""),
-                            last_name=sender.get("last_name", ""),
-                            profile_image=sender.get("profile_image", "")
-                        ),
+                        sender=sender,
                         content=msg["content"],
                         created_at=msg["created_at"],
                         is_read=True  # Ya los marcamos como leídos
@@ -146,12 +183,18 @@ async def get_conversation_with_user(username: str, current_user_id: str = Depen
 async def send_message(message_data: SendMessageRequest, current_user_id: str = Depends(auth_required_depends)):
     """Envía un mensaje"""
     try:
+        # 🔍 LOG: Inicio del envío
+        logger.info(f"📨 Enviando mensaje de {current_user_id} a {message_data.recipient_username}")
+        
         # Buscar destinatario
         recipient = await user_collection.find_one({"username": message_data.recipient_username})
         if not recipient:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
-        # La lógica del botón se mantiene en el frontend para UX
+        recipient_id = str(recipient["_id"])
+        logger.info(f"✅ Destinatario encontrado: {recipient_id}")
+        
+        # Obtener usuario actual
         current_user = await user_collection.find_one({"_id": ObjectId(current_user_id)})
         
         # Buscar o crear conversación
@@ -159,8 +202,11 @@ async def send_message(message_data: SendMessageRequest, current_user_id: str = 
             "participants": {"$all": [ObjectId(current_user_id), recipient["_id"]]}
         })
         
+        is_new_conversation = conversation is None
+        
         if not conversation:
             # Crear nueva conversación
+            logger.info(f"🆕 Creando nueva conversación")
             conv_data = {
                 "participants": [ObjectId(current_user_id), recipient["_id"]],
                 "created_at": datetime.utcnow(),
@@ -168,6 +214,8 @@ async def send_message(message_data: SendMessageRequest, current_user_id: str = 
             }
             conv_result = await conversation_collection.insert_one(conv_data)
             conversation = {"_id": conv_result.inserted_id}
+        else:
+            logger.info(f"✅ Conversación existente: {str(conversation['_id'])}")
         
         # Crear mensaje
         message_doc = {
@@ -186,7 +234,7 @@ async def send_message(message_data: SendMessageRequest, current_user_id: str = 
             {"$set": {"updated_at": datetime.utcnow()}}
         )
         
-        # NUEVO: Crear objeto de respuesta con datos del mensaje
+        # Crear objeto de respuesta
         message_response = MessageResponse(
             id=str(message_result.inserted_id),
             sender=MessageUser(
@@ -201,22 +249,32 @@ async def send_message(message_data: SendMessageRequest, current_user_id: str = 
             is_read=False
         )
         
-        # Enviar via WebSocket
+        # 🔔 ENVIAR VIA WEBSOCKET AL DESTINATARIO
         websocket_message = {
             "type": "new_message",
             "data": {
                 "sender_username": current_user["username"],
                 "content": message_data.content,
-                "created_at": message_doc["created_at"].isoformat()
+                "created_at": message_doc["created_at"].isoformat(),
+                "is_new_conversation": is_new_conversation  # 🆕 AÑADIDO
             }
         }
         
-        await manager.send_personal_message(websocket_message, str(recipient["_id"]))
+        # Verificar si el destinatario está conectado
+        is_recipient_online = manager.is_user_online(recipient_id)
+        logger.info(f"🔌 Destinatario online: {is_recipient_online}")
         
-        # Enviar push notification si el usuario no está online
-        if not manager.is_user_online(str(recipient["_id"])):
-            # Buscar el push token del usuario (campo correcto: expo_push_token)
+        if is_recipient_online:
+            logger.info(f"📤 Enviando WebSocket a destinatario: {recipient_id}")
+            await manager.send_personal_message(websocket_message, recipient_id)
+            logger.info(f"✅ WebSocket enviado exitosamente")
+        else:
+            logger.info(f"⚠️ Destinatario offline, no se envía WebSocket")
+        
+        # 📲 Enviar push notification si el usuario no está online
+        if not is_recipient_online:
             if recipient.get("expo_push_token"):
+                logger.info(f"📲 Enviando push notification")
                 await send_push_notification(
                     token=recipient["expo_push_token"],
                     title=f"Nuevo mensaje de {current_user['username']}",
@@ -228,13 +286,17 @@ async def send_message(message_data: SendMessageRequest, current_user_id: str = 
                     }
                 )
         
-        # CAMBIO PRINCIPAL: Regresar datos del mensaje creado
+        logger.info(f"✅ Mensaje enviado completamente")
+        
+        # Retornar datos del mensaje creado
         return {
             "message": "Mensaje enviado exitosamente",
             "data": message_response
         }
         
     except HTTPException as e:
+        logger.error(f"❌ HTTPException: {str(e)}")
         raise e
     except Exception as e:
+        logger.error(f"❌ Error inesperado: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")

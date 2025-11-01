@@ -56,6 +56,10 @@ async def signup(user: UserCreate):
     user_data["followers"] = []
     user_data["following"] = []
     
+    # Asegurar que los arrays de habilidades estén inicializados
+    user_data["interests_offered"] = user_data.get("interests_offered", [])
+    user_data["interests_wanted"] = user_data.get("interests_wanted", [])
+    
     # Agregar timestamp de creación
     user_data["created_at"] = datetime.utcnow()
     user_data["last_login"] = datetime.utcnow()
@@ -68,7 +72,7 @@ async def signup(user: UserCreate):
 
     return {
         "message": "Usuario registrado exitosamente",
-        **tokens,  # Incluye access_token, refresh_token, token_type, expires_in
+        **tokens,
         "user": {
             "id": user_id,
             "username": user.username,
@@ -76,6 +80,8 @@ async def signup(user: UserCreate):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "about_me": user.about_me,
+            "interests_offered": user.interests_offered,
+            "interests_wanted": user.interests_wanted,
             "profile_image": profile_image_url
         }
     }
@@ -113,13 +119,15 @@ async def login(data: LoginRequest):
         "first_name": user.get("first_name", ""),
         "last_name": user.get("last_name", ""),
         "about_me": user.get("about_me", ""),
+        "interests_offered": user.get("interests_offered", []),
+        "interests_wanted": user.get("interests_wanted", []),
         "profile_image": str(user.get("profile_image") or ""),
         "last_login": user.get("last_login")
     }
 
     return {
         "message": "Login exitoso",
-        **tokens,  # Incluye access_token, refresh_token, token_type, expires_in
+        **tokens,
         "user": user_data
     }
 
@@ -128,10 +136,7 @@ async def login(data: LoginRequest):
 async def refresh_access_token(request: RefreshTokenRequest):
     """Renovar access token usando refresh token"""
     try:
-        # Verificar el refresh token
         payload = verify_refresh_token(request.refresh_token)
-        
-        # Extraer el user_id del payload
         user_id = payload.get("sub")
         
         if not user_id:
@@ -140,7 +145,6 @@ async def refresh_access_token(request: RefreshTokenRequest):
                 detail="Token payload inválido"
             )
         
-        # Verificar que el usuario aún existe en la base de datos
         try:
             user = await user_collection.find_one({"_id": ObjectId(user_id)})
         except:
@@ -155,13 +159,12 @@ async def refresh_access_token(request: RefreshTokenRequest):
                 detail="Usuario no encontrado"
             )
         
-        # Crear nuevo access token
         new_access_token = create_access_token({"sub": user_id})
         
         return {
             "access_token": new_access_token,
             "token_type": "bearer",
-            "expires_in": 3600,  # 1 hora
+            "expires_in": 3600,
             "message": "Token renovado exitosamente"
         }
         
@@ -178,20 +181,7 @@ async def refresh_access_token(request: RefreshTokenRequest):
 async def logout(request: RefreshTokenRequest):
     """Cerrar sesión - Invalida el refresh token"""
     try:
-        # Verificar que el refresh token es válido antes de invalidarlo
         payload = verify_refresh_token(request.refresh_token)
-        
-        # Aquí podrías agregar el refresh token a una blacklist en tu base de datos
-        # Por ahora, simplemente validamos que el token era correcto
-        
-        # Opcional: Crear una colección de blacklist para tokens invalidados
-        # blacklist_data = {
-        #     "token": request.refresh_token,
-        #     "user_id": payload.get("sub"),
-        #     "blacklisted_at": datetime.utcnow(),
-        #     "reason": "user_logout"
-        # }
-        # await blacklist_collection.insert_one(blacklist_data)
         
         return {
             "message": "Sesión cerrada exitosamente",
@@ -199,7 +189,6 @@ async def logout(request: RefreshTokenRequest):
         }
         
     except HTTPException as e:
-        # Aunque el token sea inválido, consideramos el logout exitoso
         return {
             "message": "Sesión cerrada exitosamente",
             "logged_out": True
@@ -215,7 +204,6 @@ async def logout(request: RefreshTokenRequest):
 async def verify_token(current_user_id: str = Depends(auth_required_depends)):
     """Verificar si un token es válido y obtener info del usuario"""
     try:
-        # Obtener información actualizada del usuario
         user = await user_collection.find_one({"_id": ObjectId(current_user_id)})
         
         if not user:
@@ -233,6 +221,8 @@ async def verify_token(current_user_id: str = Depends(auth_required_depends)):
                 "first_name": user.get("first_name", ""),
                 "last_name": user.get("last_name", ""),
                 "about_me": user.get("about_me", ""),
+                "interests_offered": user.get("interests_offered", []),
+                "interests_wanted": user.get("interests_wanted", []),
                 "profile_image": str(user.get("profile_image") or "")
             }
         }
@@ -256,7 +246,6 @@ async def get_current_user_info(current_user_id: str = Depends(auth_required_dep
                 detail="Usuario no encontrado"
             )
         
-        # Convertir fechas y ObjectIds a strings para serialización JSON
         def serialize_datetime(dt):
             return dt.isoformat() if dt else None
         
@@ -271,6 +260,8 @@ async def get_current_user_info(current_user_id: str = Depends(auth_required_dep
                 "first_name": user.get("first_name", ""),
                 "last_name": user.get("last_name", ""),
                 "about_me": user.get("about_me", ""),
+                "interests_offered": user.get("interests_offered", []),
+                "interests_wanted": user.get("interests_wanted", []),
                 "profile_image": str(user.get("profile_image") or ""),
                 "followers": serialize_objectid_list(user.get("followers", [])),
                 "following": serialize_objectid_list(user.get("following", [])),

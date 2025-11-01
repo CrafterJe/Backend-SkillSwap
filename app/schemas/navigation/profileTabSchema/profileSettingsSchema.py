@@ -10,7 +10,8 @@ class UserProfile(BaseModel):
     phone: Optional[str]
     birth_date: str
     location: Optional[str]
-    interests: Optional[str]
+    interests_offered: list[str] = []
+    interests_wanted: list[str] = []
     allow_be_added: Optional[bool]
     about_me: Optional[str]
     profile_image: Optional[str] = None
@@ -23,7 +24,8 @@ class UpdateUserProfile(BaseModel):
     phone: Optional[str] = None
     birth_date: Optional[date] = None
     location: Optional[str] = None
-    interests: Optional[str] = None
+    interests_offered: Optional[list[str]] = Field(None, max_items=10)
+    interests_wanted: Optional[list[str]] = None
     allow_be_added: Optional[bool] = None
     about_me: Optional[str] = None
     profile_image: Optional[str] = None
@@ -31,3 +33,7 @@ class UpdateUserProfile(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str = Field(..., min_length=6)
     new_password: str = Field(..., min_length=6)
+
+class PredefinedSkillsResponse(BaseModel):
+    skills: list[str]
+    message: str = "Lista de habilidades disponibles"

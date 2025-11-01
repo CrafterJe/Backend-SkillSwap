@@ -1,6 +1,6 @@
 # schemas/navigation/profileTabSchema/profileScreenSchema.py
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class PublicUserProfile(BaseModel):
     id: str
@@ -16,3 +16,20 @@ class PublicUserProfile(BaseModel):
 
 class FollowActionResponse(BaseModel):
     message: str
+
+class UserListItem(BaseModel):
+    id: str
+    username: str
+    first_name: str
+    last_name: str
+    profile_image: Optional[str] = None
+    is_following: bool = False
+    show_follow_button: bool = False
+
+class FollowersResponse(BaseModel):
+    followers: List[UserListItem]
+    count: int
+
+class FollowingResponse(BaseModel):
+    following: List[UserListItem]
+    count: int

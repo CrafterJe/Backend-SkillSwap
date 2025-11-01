@@ -9,9 +9,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "super-secret")
 ALGORITHM = "HS256"
 
 def create_access_token(data: dict):
-    """Crea un access token que expira en 1 hora"""
+    """Crea un access token que expira en 2 horas"""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(hours=1)  # 1 hora
+    expire = datetime.utcnow() + timedelta(hours=2)  # 2 horas 
     to_encode.update({
         "exp": expire,
         "type": "access"
@@ -67,7 +67,7 @@ def create_token_pair(user_data: dict):
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": 3600  # 1 hora en segundos
+        "expires_in": 7200  # 2 horas en segundos
     }
 
 # Funciones de compatibilidad con tu código existente
