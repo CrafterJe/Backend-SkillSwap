@@ -6,8 +6,14 @@ db = client[DB_NAME]
 
 # colección de usuarios
 user_collection = db["users"]
+
 # colección de notificaciones
 notification_collection = db["notifications"]
+
 # colección de mensajes
 conversation_collection = db["conversations"]
 message_collection = db["messages"]
+
+# Colecciones de posts
+post_collection = db["posts"]
+comment_collection = db["comments"]

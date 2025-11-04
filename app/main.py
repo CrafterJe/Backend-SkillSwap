@@ -12,6 +12,8 @@ from app.routes.navigation.searchRoute import router as search_router
 from app.routes.navigation import notificationsRoute
 from app.routes import messageRoute
 from app.routes import websocketRoute
+from app.routes.posts import postRoute
+from app.routes.posts import commentRoute
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -32,8 +34,14 @@ app.include_router(profileSettingsRoute.router)
 app.include_router(profileScreenRoute.router)
 app.include_router(search_router)
 app.include_router(notificationsRoute.router)
+
+# Rutas de mensajes y websocket
 app.include_router(messageRoute.router)
 app.include_router(websocketRoute.router)
+
+# Rutas de posts y comentarios
+app.include_router(postRoute.router)
+app.include_router(commentRoute.router)
 
 # Punto de entrada 
 if __name__ == "__main__":
