@@ -419,3 +419,35 @@ async def update_post(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error: {str(e)}"
         )
+    
+@router.get("/{post_id}", response_model=PostResponse)
+async def get_post_by_id(
+    post_id: str,
+    current_user_id: str = Depends(auth_required_depends)
+):
+    """Obtener un post específico por ID"""
+    try:
+        # Buscar post
+        post = await post_collection.find_one({"_id": ObjectId(post_id)})
+        
+        if not post:
+            raise HTTPException(status_code=404, detail="Post no encontrado")
+        
+        # Formatear y retornar
+        formatted_post = await format_post(post, current_user_id)
+        
+        if not formatted_post:
+            raise HTTPException(status_code=404, detail="Error al formatear post")
+        
+        logger.info(f"📄 Post obtenido: {post_id}")
+        
+        return formatted_post
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo post: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
