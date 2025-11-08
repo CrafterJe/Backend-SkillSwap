@@ -1,3 +1,4 @@
+# app/routes/posts/commentRoute.py
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from app.schemas.posts.postSchema import CommentCreate, CommentResponse, CommentsListResponse, PostUser
 from app.utils.auth_guardUtils import auth_required_depends

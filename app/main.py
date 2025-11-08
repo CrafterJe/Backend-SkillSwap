@@ -14,6 +14,7 @@ from app.routes import messageRoute
 from app.routes import websocketRoute
 from app.routes.posts import postRoute
 from app.routes.posts import commentRoute
+from app.routes.explore import exploreRoute
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -42,6 +43,9 @@ app.include_router(websocketRoute.router)
 # Rutas de posts y comentarios
 app.include_router(postRoute.router)
 app.include_router(commentRoute.router)
+
+# Rutas de explore
+app.include_router(exploreRoute.router)
 
 # Punto de entrada 
 if __name__ == "__main__":

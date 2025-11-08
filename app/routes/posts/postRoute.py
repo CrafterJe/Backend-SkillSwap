@@ -1,3 +1,4 @@
+# app/routes/posts/postRoute.py
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from app.schemas.posts.postSchema import PostCreate, PostUpdate, PostResponse, LikeResponse, PostUser
 from app.utils.auth_guardUtils import auth_required_depends
