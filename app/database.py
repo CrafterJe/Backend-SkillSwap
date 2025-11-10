@@ -17,3 +17,6 @@ message_collection = db["messages"]
 # Colecciones de posts
 post_collection = db["posts"]
 comment_collection = db["comments"]
+
+# Colección de historial de búsqueda
+search_history_collection = db["search_history"]

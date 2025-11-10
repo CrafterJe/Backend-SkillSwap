@@ -33,7 +33,6 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(profileSettingsRoute.router)
 app.include_router(profileScreenRoute.router)
-app.include_router(search_router)
 app.include_router(notificationsRoute.router)
 
 # Rutas de mensajes y websocket
@@ -46,6 +45,9 @@ app.include_router(commentRoute.router)
 
 # Rutas de explore
 app.include_router(exploreRoute.router)
+
+# Rutas de Historial de busqueda
+app.include_router(search_router)
 
 # Punto de entrada 
 if __name__ == "__main__":
