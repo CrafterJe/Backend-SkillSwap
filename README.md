@@ -1,117 +1,215 @@
 # SkillSwap Backend API
 
-Backend API for SkillSwap, a social platform for skill exchange and learning.
+Backend API for SkillSwap, a comprehensive skill-sharing mobile application that connects users for bidirectional knowledge exchange.
 
-## Features
+## 🎯 Overview
 
-- **JWT Refresh Token Authentication** - Secure authentication with automatic token renewal
-- **User Management** - Registration, login, profile management
-- **Social Features** - Follow/unfollow users, notifications
-- **Real-time Messaging** - Private messaging system with conversation management
-- **WebSocket Support** - Real-time message delivery and user status
-- **Search** - User search functionality
-- **Push Notifications** - Mobile push notification support
+SkillSwap backend is a high-performance FastAPI application designed to support a social platform where users can both offer and request skills. Built with modern async patterns, it handles real-time messaging, social interactions, and a comprehensive posts system with comments.
 
-## Tech Stack
+**Current Version:** 1.4.0  
+**Status:** Closed Testing on Google Play Store
 
-- **FastAPI** - Modern, fast web framework for building APIs
+## ✨ Core Features
+
+### Authentication & Security
+- **JWT Refresh Token System** - Access tokens (1h) + Refresh tokens (30 days)
+- **Automatic Token Renewal** - Seamless token refresh on expiration
+- **Secure Password Hashing** - bcrypt implementation
+- **Token Invalidation** - Secure logout with token blacklisting
+
+### Social Platform
+- **User Profiles** - Complete profile management with images
+- **Follow System** - Bidirectional following with follower/following counts
+- **Posts & Comments** - Full CRUD operations with nested comments support
+- **Likes System** - Like posts and comments
+- **Search** - User search with optimized queries
+
+### Real-time Communication
+- **WebSocket Messaging** - Live message delivery with ~100ms latency
+- **Conversation Management** - Thread-based messaging system
+- **Optimized Chat Loading** - Reduced from 1s to ~100ms through aggregation pipelines
+- **Message Caching** - Frontend caching for instant conversation access
+- **Reconnection Logic** - Exponential backoff for connection stability
+
+### Notifications
+- **Push Notifications** - Firebase/Expo push notification integration
+- **Activity Notifications** - Follows, likes, comments, mentions
+- **Real-time Delivery** - Instant notification updates via WebSocket
+- **Read/Unread Status** - Notification state management
+
+### Explore & Discovery
+- **Skill Categories** - 20+ categorized skill exploration
+- **Category Images** - Visual skill category representation
+- **Lazy Loading** - Efficient pagination for large datasets
+- **Optimized Queries** - Reduced from 100+ to 2 aggregation pipelines
+
+## 🛠 Tech Stack
+
+- **FastAPI** - Modern async web framework
 - **MongoDB** - NoSQL database with Motor async driver
 - **WebSocket** - Real-time bidirectional communication
 - **JWT** - JSON Web Tokens for authentication
 - **Pydantic** - Data validation and settings management
 - **Python 3.11+** - Latest Python features
+- **Firebase Storage** - Image storage and delivery
+- **Expo Push Notifications** - Mobile push notification service
 
-## Authentication System
-
-This API implements a secure JWT refresh token system:
-
-- **Access Tokens**: Short-lived (1 hour) for API requests
-- **Refresh Tokens**: Long-lived (30 days) for token renewal
-- **Automatic Renewal**: Transparent token refresh on expiration
-- **Secure Logout**: Token invalidation on logout
-
-## Installation
-
-### Prerequisites
+## 📋 Prerequisites
 
 - Python 3.11+
-- MongoDB
+- MongoDB 4.4+
 - pip or poetry
+- Firebase account (for storage and push notifications)
 
-### Setup
+## 🚀 Installation
 
-1. Clone the repository:
+### 1. Clone and Setup
+
 ```bash
 git clone <repository-url>
 cd backend
-```
-
-2. Create virtual environment:
-```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+### 2. Environment Configuration
 
-5. Start the server:
-```bash
-uvicorn app.main:app --reload
-```
-
-## Environment Variables
+Create `.env` file:
 
 ```env
+# Server
 SECRET_KEY=your-secret-key-here
+API_URL=http://localhost:8000
+
+# Database
 MONGODB_URL=mongodb://localhost:27017
 DATABASE_NAME=skillswap
+
+# JWT Configuration
+JWT_SECRET_KEY=your-jwt-secret-key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=30
+
+# Firebase (optional for local dev)
+FIREBASE_CREDENTIALS_PATH=path/to/credentials.json
 ```
 
-## API Endpoints
+### 3. Run Server
+
+```bash
+# Development
+uvicorn app.main:app --reload
+
+# Production
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Server runs at `http://localhost:8000`
+
+## 📁 Project Structure
+
+```
+app/
+├── main.py                      # FastAPI app initialization & CORS
+├── config.py                    # Environment configuration
+├── database.py                  # MongoDB connection
+│
+├── models/                      # Database models
+│   ├── authModel.py            # User model
+│   └── messageModel.py         # Message & conversation models
+│
+├── schemas/                     # Pydantic schemas (request/response)
+│   ├── authSchema.py           # Auth schemas
+│   ├── explore/
+│   │   └── exploreSchema.py    # Explore feature schemas
+│   ├── messages/
+│   │   └── messageSchema.py    # Message schemas
+│   ├── navigation/
+│   │   ├── notificationsSchema.py
+│   │   ├── searchSchema.py
+│   │   └── profileTabSchema/
+│   │       ├── profileScreenSchema.py
+│   │       └── profileSettingsSchema.py
+│   └── posts/
+│       └── postSchema.py       # Posts & comments schemas
+│
+├── routes/                      # API endpoints
+│   ├── auth.py                 # Authentication routes
+│   ├── messageRoute.py         # Messaging endpoints
+│   ├── websocketRoute.py       # WebSocket connections
+│   ├── explore/
+│   │   └── exploreRoute.py     # Skill categories & exploration
+│   ├── navigation/
+│   │   ├── homeRoute.py        # Home feed
+│   │   ├── notificationsRoute.py
+│   │   ├── searchRoute.py
+│   │   └── profileTabRoute/
+│   │       ├── profileScreenRoute.py
+│   │       └── profileSettingsRoute.py
+│   └── posts/
+│       ├── postRoute.py        # Post CRUD operations
+│       └── commentRoute.py     # Comment operations
+│
+├── utils/                       # Utility functions
+│   ├── authUtils.py            # JWT token management
+│   ├── securityUtils.py        # Password hashing (bcrypt)
+│   ├── auth_guardUtils.py      # Auth middleware
+│   ├── websocket_manager.py    # WebSocket connection management
+│   └── push_notifications.py   # Expo push notification service
+│
+└── scripts/
+    └── migration_script.py      # Database migration utilities
+```
+
+## 🔌 API Endpoints
 
 ### Authentication
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/auth/signup` | Register new user |
-| POST | `/auth/login` | User login |
+| POST | `/auth/login` | User login (returns access + refresh tokens) |
 | POST | `/auth/refresh` | Refresh access token |
-| POST | `/auth/logout` | Logout user |
+| POST | `/auth/logout` | Logout and invalidate tokens |
 | GET | `/auth/verify` | Verify token validity |
 | GET | `/auth/me` | Get current user info |
 
-### User Management
+### User Profiles
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/navigation/profileTab/profileSettings` | Get user profile |
-| PUT | `/navigation/profileTab/profileSettings` | Update user profile |
+| GET | `/navigation/profileTab/profileSettings` | Get own profile |
+| PUT | `/navigation/profileTab/profileSettings` | Update profile |
 | PATCH | `/navigation/profileTab/profileSettings/password` | Change password |
-
-### Social Features
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
 | GET | `/navigation/profileTab/profileScreen/{username}` | Get public profile |
 | POST | `/navigation/profileTab/profileScreen/{username}/follow` | Follow user |
 | POST | `/navigation/profileTab/profileScreen/{username}/unfollow` | Unfollow user |
+
+### Posts & Comments
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/posts/` | Get all posts (feed) |
+| POST | `/posts/` | Create new post |
+| GET | `/posts/{post_id}` | Get single post |
+| PUT | `/posts/{post_id}` | Update post |
+| DELETE | `/posts/{post_id}` | Delete post |
+| POST | `/posts/{post_id}/like` | Like/unlike post |
+| GET | `/posts/{post_id}/comments` | Get post comments |
+| POST | `/posts/{post_id}/comments` | Add comment |
+| PUT | `/posts/comments/{comment_id}` | Update comment |
+| DELETE | `/posts/comments/{comment_id}` | Delete comment |
+| POST | `/posts/comments/{comment_id}/like` | Like/unlike comment |
 
 ### Messages
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/messages/conversations` | Get user conversations |
-| GET | `/messages/conversation/{username}` | Get messages with specific user |
-| POST | `/messages/send` | Send message to user |
+| GET | `/messages/conversations` | Get all conversations (optimized) |
+| GET | `/messages/conversation/{username}` | Get messages with user |
+| POST | `/messages/send` | Send message |
 
 ### Notifications
 
@@ -119,8 +217,15 @@ DATABASE_NAME=skillswap
 |--------|----------|-------------|
 | GET | `/notifications/` | Get user notifications |
 | PATCH | `/notifications/{id}/read` | Mark notification as read |
-| PATCH | `/notifications/read/all` | Mark all notifications as read |
-| POST | `/notifications/push-token` | Update push notification token |
+| PATCH | `/notifications/read/all` | Mark all as read |
+| POST | `/notifications/push-token` | Register push token |
+
+### Explore
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/explore/categories` | Get all skill categories |
+| GET | `/explore/categories/{category}` | Get category details |
 
 ### Search
 
@@ -132,204 +237,341 @@ DATABASE_NAME=skillswap
 
 | Endpoint | Description |
 |----------|-------------|
-| `/ws?token={jwt_token}` | Real-time message delivery and user status |
+| WS | `/ws?token={jwt_token}` | Real-time messaging and notifications |
 
-## Authentication Usage
+## 🔐 Authentication Flow
 
-### Login Response
-```json
+### 1. Login
+```bash
+POST /auth/login
 {
-  "message": "Login exitoso",
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "username": "user123",
+  "password": "securepass"
+}
+
+Response:
+{
+  "access_token": "eyJ0eXAi...",
+  "refresh_token": "eyJ0eXAi...",
   "token_type": "bearer",
   "expires_in": 3600,
-  "user": {
-    "id": "user_id",
-    "username": "username",
-    "email": "user@example.com",
-    "first_name": "John",
-    "last_name": "Doe"
-  }
+  "user": {...}
 }
 ```
 
-### Making Authenticated Requests
+### 2. Authenticated Requests
 ```bash
-curl -H "Authorization: Bearer <access_token>" \
-     https://api.skillswap.com/auth/me
+GET /auth/me
+Headers: {
+  "Authorization": "Bearer <access_token>"
+}
 ```
 
-### Token Refresh
+### 3. Token Refresh
 ```bash
-curl -X POST https://api.skillswap.com/auth/refresh \
-     -H "Content-Type: application/json" \
-     -d '{"refresh_token": "<refresh_token>"}'
+POST /auth/refresh
+{
+  "refresh_token": "<refresh_token>"
+}
+
+Response:
+{
+  "access_token": "new_token...",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
 ```
 
-## Database Schema
+## 💾 Database Schema
 
 ### Users Collection
-```json
+```javascript
 {
-  "_id": "ObjectId",
-  "username": "string",
-  "email": "string", 
-  "password": "hashed_string",
-  "first_name": "string",
-  "last_name": "string",
-  "gender": "string",
-  "birth_date": "datetime",
-  "profile_image": "string",
-  "followers": ["ObjectId"],
-  "following": ["ObjectId"],
-  "expo_push_token": "string",
-  "created_at": "datetime",
-  "last_login": "datetime"
+  _id: ObjectId,
+  username: String (unique),
+  email: String (unique),
+  password: String (hashed),
+  first_name: String,
+  last_name: String,
+  gender: String,
+  birth_date: DateTime,
+  profile_image: String (URL),
+  bio: String,
+  skills_offered: [String],
+  skills_wanted: [String],
+  followers: [ObjectId],
+  following: [ObjectId],
+  expo_push_token: String,
+  created_at: DateTime,
+  last_login: DateTime,
+  is_active: Boolean
+}
+```
+
+### Posts Collection
+```javascript
+{
+  _id: ObjectId,
+  user_id: ObjectId,
+  content: String,
+  images: [String],
+  likes: [ObjectId],
+  comment_count: Integer,
+  created_at: DateTime,
+  updated_at: DateTime
+}
+```
+
+### Comments Collection
+```javascript
+{
+  _id: ObjectId,
+  post_id: ObjectId,
+  user_id: ObjectId,
+  content: String,
+  likes: [ObjectId],
+  created_at: DateTime,
+  updated_at: DateTime
 }
 ```
 
 ### Conversations Collection
-```json
+```javascript
 {
-  "_id": "ObjectId",
-  "participants": ["ObjectId"],
-  "created_at": "datetime",
-  "updated_at": "datetime"
+  _id: ObjectId,
+  participants: [ObjectId] (2 users),
+  last_message: String,
+  last_message_at: DateTime,
+  created_at: DateTime,
+  updated_at: DateTime
 }
 ```
 
 ### Messages Collection
-```json
+```javascript
 {
-  "_id": "ObjectId",
-  "conversation_id": "ObjectId",
-  "sender_id": "ObjectId",
-  "content": "string",
-  "created_at": "datetime",
-  "is_read": "boolean"
+  _id: ObjectId,
+  conversation_id: ObjectId,
+  sender_id: ObjectId,
+  content: String,
+  is_read: Boolean,
+  created_at: DateTime
 }
 ```
 
 ### Notifications Collection
-```json
+```javascript
 {
-  "_id": "ObjectId",
-  "to_user": "ObjectId",
-  "from_user": "ObjectId", 
-  "type": "string",
-  "message": "string",
-  "read": "boolean",
-  "created_at": "datetime"
+  _id: ObjectId,
+  to_user: ObjectId,
+  from_user: ObjectId,
+  type: String (follow|like|comment|mention),
+  message: String,
+  reference_id: ObjectId (post/comment),
+  read: Boolean,
+  created_at: DateTime
 }
 ```
 
-## Real-time Messaging
+## 🚀 Performance Optimizations
 
-### WebSocket Connection
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws?token=your_jwt_token');
+### Chat System (v1.4.0)
+- **Before:** 1000ms load time, 100+ database queries
+- **After:** ~100ms load time, 2 optimized aggregation pipelines
+- **Method:** MongoDB aggregation with $lookup and $unwind
+- **Impact:** 90% reduction in load time
 
-ws.onmessage = function(event) {
-    const message = JSON.parse(event.data);
-    console.log('Received:', message);
-};
-```
+### Explore Feature
+- **Lazy Loading:** Pagination for large category lists
+- **Image Optimization:** Cached category images
+- **Query Reduction:** Consolidated queries from 100+ to 2
 
-### Message Types
-- `new_message` - New message received
-- `user_status` - User online/offline status
-- `ping/pong` - Connection heartbeat
+### General
+- **Async Operations:** All database operations use Motor async driver
+- **Connection Pooling:** MongoDB connection pool management
+- **WebSocket Efficiency:** Single connection per user with heartbeat
 
-### Sending Messages
-```bash
-curl -X POST http://localhost:8000/messages/send \
-     -H "Authorization: Bearer <token>" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "recipient_username": "john_doe",
-       "content": "Hello there!"
-     }'
-```
-
-## Development
+## 🔧 Development
 
 ### Running Tests
 ```bash
 pytest
+pytest --cov=app tests/
 ```
 
-### Code Style
+### Code Quality
 ```bash
-black .
-flake8 .
+# Format code
+black app/
+
+# Lint
+flake8 app/
+
+# Type checking
+mypy app/
 ```
 
-### Project Structure
-```
-app/
-├── main.py              # FastAPI app initialization
-├── database.py          # MongoDB connection
-├── models/             # Data models
-│   ├── authModel.py    # User authentication models
-│   └── messageModel.py # Message and conversation models
-├── routes/             # API endpoints
-│   ├── auth.py         # Authentication routes
-│   ├── messageRoute.py # Messaging endpoints
-│   ├── websocketRoute.py # WebSocket connections
-│   └── navigation/     # Feature routes
-├── schemas/            # Pydantic schemas
-│   ├── authSchema.py   # Auth request/response models
-│   └── messages/       # Message schemas
-├── utils/              # Utility functions
-│   ├── authUtils.py    # JWT token management
-│   ├── securityUtils.py # Password hashing
-│   ├── auth_guardUtils.py # Auth middleware
-│   ├── websocket_manager.py # WebSocket management
-│   └── push_notifications.py # Push notification service
+### Database Migrations
+```bash
+python -m app.scripts.migration_script
 ```
 
-## Deployment
+## 🌐 WebSocket Usage
+
+### Client Connection
+```javascript
+const token = "your_jwt_token";
+const ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+
+ws.onopen = () => {
+  console.log('Connected');
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Message:', data);
+};
+
+ws.onclose = () => {
+  console.log('Disconnected');
+  // Implement reconnection with exponential backoff
+};
+```
+
+### Message Types
+```javascript
+// New message
+{
+  type: "new_message",
+  data: {
+    conversation_id: "...",
+    sender: {...},
+    content: "...",
+    created_at: "..."
+  }
+}
+
+// User status
+{
+  type: "user_status",
+  user_id: "...",
+  status: "online|offline"
+}
+
+// Notification
+{
+  type: "notification",
+  data: {
+    type: "follow|like|comment",
+    from_user: {...},
+    message: "..."
+  }
+}
+```
+
+## 📱 Push Notifications
+
+### Register Token
+```bash
+POST /notifications/push-token
+{
+  "expo_push_token": "ExponentPushToken[xxxxxx]"
+}
+```
+
+### Notification Types
+- **Follow:** "X started following you"
+- **Like:** "X liked your post"
+- **Comment:** "X commented on your post"
+- **Mention:** "X mentioned you in a comment"
+
+## 🚢 Deployment
 
 ### Railway (Recommended)
-1. Connect your GitHub repository
-2. Set environment variables in Railway dashboard
-3. Deploy automatically on push to main branch
+1. Connect GitHub repository
+2. Set environment variables:
+   ```
+   SECRET_KEY
+   MONGODB_URL
+   DATABASE_NAME
+   JWT_SECRET_KEY
+   ```
+3. Add `Procfile`:
+   ```
+   web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+4. Deploy automatically on push to main
 
 ### Docker
-```bash
-docker build -t skillswap-backend .
-docker run -p 8000:8000 skillswap-backend
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-## API Documentation
+```bash
+docker build -t skillswap-backend .
+docker run -p 8000:8000 --env-file .env skillswap-backend
+```
 
-When the server is running, visit:
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+## 📚 API Documentation
 
-## Contributing
+Interactive documentation available at:
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and add tests
-4. Run tests and ensure they pass
-5. Submit a pull request
+## 🔒 Security Features
 
-## Security
+- ✅ Password hashing with bcrypt (12 rounds)
+- ✅ JWT token signing with HS256
+- ✅ Token expiration and refresh mechanism
+- ✅ Input validation with Pydantic
+- ✅ WebSocket authentication
+- ✅ CORS configuration
+- ✅ SQL injection prevention (NoSQL)
+- ✅ Rate limiting (planned)
+- ✅ Secure push notification tokens
 
-- All passwords are hashed using bcrypt
-- JWT tokens are signed with HS256 algorithm
-- Refresh tokens have longer expiration than access tokens
-- Input validation using Pydantic schemas
-- WebSocket connections require JWT authentication
-- Rate limiting and CORS configuration
-- Push notifications use secure tokens
+## 🐛 Known Issues & Limitations
 
-## License
+- WebSocket requires manual reconnection on app backgrounding (handled in frontend)
+- iOS push notifications work natively, Android requires development build
+- Maximum message size: 1MB
+- Image upload size limit: 5MB per image
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📝 Commit Convention
 
-## Support
+```
+Short, single-line messages in English
+Examples:
+- "Add user profile endpoint"
+- "Fix message loading performance"
+- "Update authentication flow"
+```
 
-For support, email support@skillswap.com or create an issue in the repository.
+## 🤝 Contributing
+
+1. Create feature branch: `git checkout -b feature-name`
+2. Make changes following code style
+3. Test thoroughly with Postman
+4. Write meaningful commit messages
+5. Submit pull request
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+## 👥 Authors
+
+- Juarez Suarez Raúl
+- Mauricio Popoca Coatl
+- Omar Anzures Campos  
+- Rojas Cortes Rodrigo Zuriel
+
+## 📞 Support
+
+- Issues: GitHub Issues
+- Email: support@skillswap.com
