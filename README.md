@@ -6,7 +6,7 @@ Backend API for SkillSwap, a comprehensive skill-sharing mobile application that
 
 SkillSwap backend is a high-performance FastAPI application designed to support a social platform where users can both offer and request skills. Built with modern async patterns, it handles real-time messaging, social interactions, and a comprehensive posts system with comments.
 
-**Current Version:** 1.4.0  
+**Current Version:** 1.5.0  
 **Status:** Closed Testing on Google Play Store
 
 ## ✨ Core Features
