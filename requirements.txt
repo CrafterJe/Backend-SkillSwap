@@ -113,3 +113,4 @@ yarg==0.1.9
 python-jose[cryptography]
 httpx
 websockets
+google-auth
